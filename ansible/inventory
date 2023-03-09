@@ -1,0 +1,9 @@
+[remote]
+ip_addr_vm_1
+
+[remote:vars]
+vers = 12
+db_user = user
+db_password = password
+db_name = database
+

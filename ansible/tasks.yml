@@ -1,0 +1,144 @@
+- hosts: remote
+  become: true
+  gather_facts: yes
+  tasks:
+
+  - name: Install required software for Ubuntu
+    apt:
+      name: "{{ software }}"
+    vars:
+      software:
+        - curl
+        - software-properties-common
+        - ca-certificates
+        - apt-transport-https
+
+  - name: Add Docker GPG apt Key Ubuntu
+    apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+  - name: Add Docker Repository Ubuntu
+    apt_repository:
+      repo: deb https://download.docker.com/linux/ubuntu focal stable
+      state: present
+
+  - name: Install docker Ubuntu
+    apt:
+      name: docker-ce
+      state: latest
+      update_cache: yes
+
+  - name: Enable service
+    service:
+      name: docker
+      enabled: yes
+      state: started
+
+  - name: Restart service
+    service:
+      name: docker
+      state: restarted
+
+  - name: Make directory /srv/docker
+    file:
+      path: /srv/docker
+      state: directory
+      mode: '0777'
+
+  - name: Add new /srv/docker/Dockerfile
+    copy:
+      src: /home/anton/project_work/project_7/docker/Dockerfile
+      dest: /srv/docker/Dockerfile
+
+  - name: Add new /srv/docker/web.conf
+    copy:
+      src: /home/anton/project_work/project_7/docker/web.conf
+      dest: /srv/docker/web.conf
+
+  - name: Add new /srv/docker/web.py
+    copy:
+      src: /home/anton/project_work/project_7/docker/web.py
+      dest: /srv/docker/web.py
+
+  - name: Install PostgreSQL
+    apt:
+      name: postgresql-{{ vers }}
+      update_cache: yes
+      
+  - name: Start and enable service
+    service:
+      name: postgresql
+      state: started
+      enabled: yes
+      
+  - name: Change user postgres auth peer -> trust
+    postgresql_pg_hba:
+      dest: /etc/postgresql/{{ vers }}/main/pg_hba.conf
+      contype: local
+      users: postgres
+      databases: all
+      method: trust
+
+  - name: Retart service
+    service:
+      name: postgresql
+      state: restarted
+
+  - name: Install pip3
+    apt:
+      name: python3-pip
+      update_cache: yes
+
+  - name: Install Python packages
+    pip: 
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - psycopg2-binary
+        - flask
+        - configparser
+
+  - name: Create database
+    postgresql_db:
+      state: present
+      name: "{{ db_name }}"
+
+  - name: Create db user
+    postgresql_user:
+      state: present
+      name: "{{ db_user }}"
+      password: "{{ db_password }}"
+
+  - name: Grant db user access to app db
+    postgresql_privs:
+      type: database
+      database: "{{ db_name }}"
+      roles: "{{ db_user }}"
+      grant_option: no
+      privs: all
+
+  - name: Change new user auth peer -> trust
+    postgresql_pg_hba:
+      dest: /etc/postgresql/{{ vers }}/main/pg_hba.conf
+      contype: host
+      source: 172.17.0.0/16
+      users: "{{ db_user }}"
+      databases: "{{ db_name }}"
+      method: trust
+
+  - name: Change user postgres auth trust -> peer
+    postgresql_pg_hba:
+      dest: /etc/postgresql/{{ vers }}/main/pg_hba.conf
+      contype: local
+      users: postgres
+      databases: all
+      method: peer
+
+  - name: Retart service
+    service:
+      name: postgresql
+      state: restarted
+
+
