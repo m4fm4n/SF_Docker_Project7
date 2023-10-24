@@ -48,17 +48,17 @@
 
   - name: Add new /srv/docker/Dockerfile
     copy:
-      src: /home/anton/project_work/project_7/docker/Dockerfile
+      src: ../docker/Dockerfile
       dest: /srv/docker/Dockerfile
 
   - name: Add new /srv/docker/web.conf
     copy:
-      src: /home/anton/project_work/project_7/docker/web.conf
+      src: ../docker/web.conf
       dest: /srv/docker/web.conf
 
   - name: Add new /srv/docker/web.py
     copy:
-      src: /home/anton/project_work/project_7/docker/web.py
+      src: ../docker/web.py
       dest: /srv/docker/web.py
 
   - name: Install PostgreSQL
